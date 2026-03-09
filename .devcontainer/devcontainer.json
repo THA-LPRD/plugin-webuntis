@@ -1,0 +1,39 @@
+{
+	"name": "LPRD Plugin Template Dev Container",
+	"dockerFile": "Dockerfile",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": "true",
+			"username": "vscode",
+			"upgradePackages": "true"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"aaron-bond.better-comments",
+				"visualstudioexptteam.vscodeintellicode",
+				"visualstudioexptteam.intellicode-api-usage-examples",
+				"visualstudioexptteam.vscodeintellicode-completions",
+				"streetsidesoftware.code-spell-checker",
+				"streetsidesoftware.code-spell-checker-german",
+				"waderyan.gitblame",
+				"eamodio.gitlens",
+				"gruntfuggly.todo-tree",
+				"DavidAnson.vscode-markdownlint",
+				"ms-python.vscode-pylance",
+				"ms-python.pylint",
+				"ms-python.python",
+				"ms-python.debugpy",
+				"oderwat.indent-rainbow"
+			]
+		},
+		"settings": {
+			"remote.containers.copyGitConfig": true
+		}
+	},
+	"forwardPorts": [
+		8001
+	],
+	"remoteUser": "vscode"
+}

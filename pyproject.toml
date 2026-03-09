@@ -1,0 +1,64 @@
+[project]
+name = "plugin-webuntis"
+version = "0.1.0"
+description = "LPRD WebUntis plugin - fetches and pushes timetable data"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "apscheduler>=3.11.2",
+    "fastapi[standard]>=0.134.0",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "python-dotenv>=1.2.1",
+    "sqlalchemy[asyncio]>=2.0.47",
+    "webuntis>=0.1.24",
+]
+
+[dependency-groups]
+dev = [
+    "black>=26.1.0",
+    "isort>=8.0.0",
+    "poethepoet>=0.42.1",
+    "ruff>=0.15.4",
+    "ty>=0.0.19",
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.poe]
+executor.type = "uv"
+verbosity = -1
+
+[tool.poe.tasks.run]
+shell = """
+echo "Starting Plugin..."
+if [ "${prod}" = "True" ]; then
+  fastapi run app/main.py --port 8001
+else
+  fastapi dev app/main.py --port 8001
+fi
+"""
+help = "Run the plugin server (use --prod for production)"
+
+[[tool.poe.tasks.run.args]]
+name = "prod"
+options = ["--prod"]
+type = "boolean"
+
+[tool.poe.tasks.format]
+shell = """
+echo "Formatting code with black and isort..."
+black app && isort app
+"""
+help = "Format code with black and isort"
+
+[tool.poe.tasks.lint]
+shell = """
+echo "Linting code with black, isort, ty, and ruff..."
+black --check app && isort --check app && ty check app && ruff check app
+"""
+help = "Run all linters"
