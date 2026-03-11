@@ -3,9 +3,25 @@ from typing import Any
 
 from app.untis.models import UntisPeriod
 
-_DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+_DAY_NAMES = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+]
 _DAY_PREFIXES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-_DAY_LABELS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+_DAY_LABELS = [
+    "Montag",
+    "Dienstag",
+    "Mittwoch",
+    "Donnerstag",
+    "Freitag",
+    "Samstag",
+    "Sonntag",
+]
 
 
 def _format_time(t: int) -> str:
@@ -35,7 +51,14 @@ def _convert_period(period: UntisPeriod) -> dict[str, Any]:
 
 
 def _make_free(start: int, end: int, date_int: int) -> dict[str, Any]:
-    return {"name": "", "teachers": [], "startTime": start, "endTime": end, "date": date_int, "class": ""}
+    return {
+        "name": "",
+        "teachers": [],
+        "startTime": start,
+        "endTime": end,
+        "date": date_int,
+        "class": "",
+    }
 
 
 def _merge_continuous(lessons: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -123,14 +146,16 @@ def build_room_payload(
             day_name = _DAY_NAMES[weekday]
             prefix = _DAY_PREFIXES[weekday]
             slot_num = len(days[day_name]) + 1
-            days[day_name].append({
-                "id": f"{prefix}-{slot_num}",
-                "name": entry["name"],
-                "class": entry["class"],
-                "startTime": _format_time(entry["startTime"]),
-                "endTime": _format_time(entry["endTime"]),
-                "teachers": entry["teachers"],
-            })
+            days[day_name].append(
+                {
+                    "id": f"{prefix}-{slot_num}",
+                    "name": entry["name"],
+                    "class": entry["class"],
+                    "startTime": _format_time(entry["startTime"]),
+                    "endTime": _format_time(entry["endTime"]),
+                    "teachers": entry["teachers"],
+                }
+            )
 
         first_date = periods[0].date
         cal_week = _date_int_to_date(first_date).isocalendar().week
@@ -163,7 +188,6 @@ def _find_current_slot(
 
 
 def _find_current_slot_end(payload: dict[str, Any], now: datetime) -> int | None:
-    """Find seconds until the current slot ends based on now. Returns None if no match."""
     day_name = _DAY_NAMES[now.weekday()]
     slots = payload.get("days", {}).get(day_name, [])
     now_str = _format_time(now.hour * 100 + now.minute)
@@ -177,27 +201,49 @@ def _find_current_slot_end(payload: dict[str, Any], now: datetime) -> int | None
     return None
 
 
+def _find_next_slot_start(payload: dict[str, Any], now: datetime) -> int | None:
+    day_name = _DAY_NAMES[now.weekday()]
+    slots = payload.get("days", {}).get(day_name, [])
+    now_str = _format_time(now.hour * 100 + now.minute)
+
+    for slot in slots:
+        if slot["startTime"] > now_str:
+            h, m = map(int, slot["startTime"].split(":"))
+            start_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
+            return int((start_dt - now).total_seconds())
+
+    return None
+
+
+def _find_nearest_boundary(payload: dict[str, Any], now: datetime) -> int | None:
+    current_end = _find_current_slot_end(payload, now)
+    if current_end is not None and current_end > 0:
+        return current_end
+
+    return _find_next_slot_start(payload, now)
+
+
 def compute_slot_ttl(payload: dict[str, Any], now: datetime | None = None) -> int:
-    """Seconds until the current slot ends. Minimum 60s."""
     if now is None:
         now = datetime.now()
 
-    secs = _find_current_slot_end(payload, now)
+    secs = _find_nearest_boundary(payload, now)
     if secs is not None and secs > 0:
         return secs
 
-    return max(secs or 60, 60)
+    return 3600
 
 
-def compute_next_wake_seconds(payloads: list[dict[str, Any]], now: datetime | None = None) -> int:
-    """Seconds until the earliest slot boundary across all rooms. Minimum 60s."""
+def compute_next_wake_seconds(
+    payloads: list[dict[str, Any]], now: datetime | None = None
+) -> int:
     if now is None:
         now = datetime.now()
 
     earliest: int | None = None
 
     for payload in payloads:
-        secs = _find_current_slot_end(payload, now)
+        secs = _find_nearest_boundary(payload, now)
         if secs is not None and secs > 0:
             earliest = min(earliest, secs) if earliest is not None else secs
 

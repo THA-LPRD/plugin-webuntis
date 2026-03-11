@@ -66,6 +66,13 @@ async def register(event: NeedRegistration) -> CredentialsObtained:
                 "registration_key": Settings.registration_key,
                 "base_url": Settings.plugin_base_url,
                 "version": Settings.plugin_version,
+                "topics": [
+                    {
+                        "key": "timetable",
+                        "label": "Timetable",
+                        "description": "Room timetable data from WebUntis",
+                    },
+                ],
             },
             timeout=10.0,
         )

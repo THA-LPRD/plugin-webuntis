@@ -1,6 +1,9 @@
+import asyncio
+
 from loguru import logger
 from pydantic import BaseModel, ConfigDict
 
+from app import Settings
 from app.machines.core.boot import boot, boot_error
 from app.machines.core.boot.events import (
     AuthFailed,
@@ -46,7 +49,13 @@ async def handle_boot_error(
     retries = getattr(event.trigger, "retries_remaining", 0)
 
     if retries > 0:
-        _logger.warning(f"Retrying boot ({retries - 1} retries remaining)")
+        attempt = Settings.boot_max_retries - retries
+        delay = min(
+            Settings.boot_backoff_base_seconds * (2**attempt),
+            Settings.boot_backoff_max_seconds,
+        )
+        _logger.warning(f"Retrying boot in {delay}s ({retries - 1} retries remaining)")
+        await asyncio.sleep(delay)
         return "BOOT", BootStart(retries_remaining=retries - 1)
 
     error_cls = _BOOT_ERROR_MAP.get(event.state_name)

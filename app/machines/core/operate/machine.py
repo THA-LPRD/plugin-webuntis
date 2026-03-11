@@ -16,7 +16,12 @@ from app.machines.core.operate.events import (
     PushPayload,
 )
 from app.statemachine import Depends, Region
-from app.untis import UntisClient, build_room_payload, compute_next_wake_seconds, compute_slot_ttl
+from app.untis import (
+    UntisClient,
+    build_room_payload,
+    compute_next_wake_seconds,
+    compute_slot_ttl,
+)
 
 _logger = logger.bind(classname="Operate")
 
@@ -69,7 +74,9 @@ async def fetch(event: FetchRequest, token: AuthToken) -> PushPayload:
     wake = compute_next_wake_seconds([payload])
     _next_wake[room_name] = wake
 
-    _logger.info(f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s")
+    _logger.info(
+        f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s"
+    )
 
     return PushPayload(room_name=room_name, data=payload, token=token, ttl_seconds=ttl)
 

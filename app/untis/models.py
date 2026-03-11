@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 
-
 # --- WebUntis API response models ---
 
 

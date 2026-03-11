@@ -51,7 +51,7 @@ class PluginMachine:
         await init_db(Settings.database_url)
 
         await core.start()
-        await core.process_event(BootStart())
+        await core.process_event(BootStart(retries_remaining=Settings.boot_max_retries))
 
         if core.current_state == "RUNNING":
             self._scheduler = create_room_schedulers(
@@ -60,7 +60,9 @@ class PluginMachine:
                 self.push_room_tick,
             )
             self._scheduler.start()
-            self._logger.info(f"Scheduler started for {len(Settings.untis_rooms_list())} room(s)")
+            self._logger.info(
+                f"Scheduler started for {len(Settings.untis_rooms_list())} room(s)"
+            )
             await self._event_loop()
 
     async def _event_loop(self) -> None:

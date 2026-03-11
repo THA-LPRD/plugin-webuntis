@@ -63,8 +63,29 @@ class _Settings(BaseSettings):
     )
 
     sync_interval_minutes: int = Field(
-        default=60,
+        default=6,
         description="How often to sync data from the source (in minutes)",
+        gt=0,
+        frozen=True,
+    )
+
+    boot_max_retries: int = Field(
+        default=3,
+        description="Maximum number of boot retry attempts",
+        ge=0,
+        frozen=True,
+    )
+
+    boot_backoff_base_seconds: int = Field(
+        default=2,
+        description="Base delay in seconds for exponential boot retry backoff",
+        gt=0,
+        frozen=True,
+    )
+
+    boot_backoff_max_seconds: int = Field(
+        default=60,
+        description="Maximum delay in seconds for boot retry backoff",
         gt=0,
         frozen=True,
     )

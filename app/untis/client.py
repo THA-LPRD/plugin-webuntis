@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 from loguru import logger
 
-from app.untis.models import UntisElementWrapper, UntisPeriod
+from app.untis.models import UntisPeriod
 
 _logger = logger.bind(classname="UntisClient")
 

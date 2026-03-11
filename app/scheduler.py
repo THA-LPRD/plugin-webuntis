@@ -37,7 +37,9 @@ def reschedule_room_in(scheduler: AsyncIOScheduler, room: str, seconds: int) -> 
     _logger.debug(f"'{room}' next sync in {seconds}s ({run_at.strftime('%H:%M:%S')})")
 
 
-def reschedule_all(scheduler: AsyncIOScheduler, rooms: list[str], interval_minutes: int) -> None:
+def reschedule_all(
+    scheduler: AsyncIOScheduler, rooms: list[str], interval_minutes: int
+) -> None:
     for room in rooms:
         scheduler.reschedule_job(
             _job_id(room),
