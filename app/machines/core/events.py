@@ -6,7 +6,8 @@ class ErrorCleared(Event):
 
 
 class Tick(Event):
-    pass
+    def __init__(self, room_name: str) -> None:
+        self.room_name = room_name
 
 
 class Shutdown(Event):

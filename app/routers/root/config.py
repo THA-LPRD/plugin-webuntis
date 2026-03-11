@@ -3,7 +3,8 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from app.runtime_config import RuntimeConfig
-from app.scheduler import reschedule
+from app import Settings
+from app.scheduler import reschedule_all
 
 router = APIRouter()
 _logger = logger.bind(classname="ConfigRouter")
@@ -32,7 +33,7 @@ async def update_config(body: ConfigUpdate, request: Request) -> dict[str, str]:
 
     plugin_machine = request.app.state.plugin_machine
     if plugin_machine.scheduler:
-        reschedule(plugin_machine.scheduler, body.sync_interval_minutes)
-        _logger.info(f"Rescheduled sync to every {body.sync_interval_minutes} minutes")
+        reschedule_all(plugin_machine.scheduler, Settings.untis_rooms_list(), body.sync_interval_minutes)
+        _logger.info(f"Rescheduled all rooms to every {body.sync_interval_minutes} minutes")
 
     return {"status": "ok"}

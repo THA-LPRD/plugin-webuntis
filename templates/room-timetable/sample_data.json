@@ -1,0 +1,124 @@
+{
+  "calendarWeek": 12,
+  "currentLessonId": "mon-4",
+  "day": "monday",
+  "dayLabel": "Montag",
+  "days": {
+    "friday": [
+      {
+        "class": "",
+        "endTime": "23:50",
+        "id": "fri-1",
+        "name": "Data Science Wanderausstellung",
+        "startTime": "07:00",
+        "teachers": []
+      }
+    ],
+    "monday": [
+      {
+        "class": "",
+        "endTime": "09:45",
+        "id": "mon-1",
+        "name": "",
+        "startTime": "00:00",
+        "teachers": []
+      },
+      {
+        "class": "I-BIS2",
+        "endTime": "11:15",
+        "id": "mon-2",
+        "name": "Begrüßung Masterstudierende",
+        "startTime": "09:45",
+        "teachers": []
+      },
+      {
+        "class": "",
+        "endTime": "11:45",
+        "id": "mon-3",
+        "name": "",
+        "startTime": "11:15",
+        "teachers": []
+      },
+      {
+        "class": "G-KD2-a",
+        "endTime": "13:15",
+        "id": "mon-4",
+        "name": "Grundlagen digitaler Medien Vorlesung",
+        "startTime": "11:45",
+        "teachers": [
+          "KUNERT ANDREAS"
+        ]
+      },
+      {
+        "class": "",
+        "endTime": "14:00",
+        "id": "mon-5",
+        "name": "",
+        "startTime": "13:15",
+        "teachers": []
+      },
+      {
+        "class": "G-KD2-a",
+        "endTime": "15:30",
+        "id": "mon-6",
+        "name": "Design- und Kunstgeschichte VL",
+        "startTime": "14:00",
+        "teachers": [
+          "FLEISCHMANN ULRICH"
+        ]
+      },
+      {
+        "class": "",
+        "endTime": "15:40",
+        "id": "mon-7",
+        "name": "",
+        "startTime": "15:30",
+        "teachers": []
+      },
+      {
+        "class": "G-KD2-a",
+        "endTime": "17:10",
+        "id": "mon-8",
+        "name": "Designtheorie Vorlesung",
+        "startTime": "15:40",
+        "teachers": [
+          "FLEISCHMANN ULRICH"
+        ]
+      },
+      {
+        "class": "",
+        "endTime": "23:59",
+        "id": "mon-9",
+        "name": "",
+        "startTime": "17:10",
+        "teachers": []
+      }
+    ],
+    "saturday": [],
+    "sunday": [],
+    "thursday": [
+      {
+        "class": "",
+        "endTime": "23:50",
+        "id": "thu-1",
+        "name": "Data Science Wanderausstellung",
+        "startTime": "07:00",
+        "teachers": []
+      }
+    ],
+    "tuesday": [
+      {
+        "class": "",
+        "endTime": "17:10",
+        "id": "tue-1",
+        "name": "Ersthelferschulung",
+        "startTime": "08:00",
+        "teachers": []
+      }
+    ],
+    "wednesday": []
+  },
+  "fetchedAt": "2026-03-09 09:32",
+  "room": "M1.02",
+  "year": 2026
+}

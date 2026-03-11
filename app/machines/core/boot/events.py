@@ -36,5 +36,15 @@ class StorageFailed(Event):
     pass
 
 
+class CreateTemplate(Event):
+    def __init__(self, token: str, retries_remaining: int = MAX_RETRIES) -> None:
+        self.token = token
+        self.retries_remaining = retries_remaining
+
+
 class AuthFailed(Event):
+    pass
+
+
+class TemplateFailed(Event):
     pass

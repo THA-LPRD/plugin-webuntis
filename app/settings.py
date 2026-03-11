@@ -69,30 +69,14 @@ class _Settings(BaseSettings):
         frozen=True,
     )
 
-    # WebUntis
+    # WebUntis (anonymous auth — no credentials needed)
     untis_server: str = Field(
-        description="WebUntis server hostname (e.g. neilo.webuntis.com)",
+        description="WebUntis server base URL (e.g. https://neilo.webuntis.com)",
         frozen=True,
     )
 
     untis_school: str = Field(
-        description="WebUntis school name (login identifier)",
-        frozen=True,
-    )
-
-    untis_username: str = Field(
-        description="WebUntis API username",
-        frozen=True,
-    )
-
-    untis_password: str = Field(
-        description="WebUntis API password",
-        frozen=True,
-    )
-
-    untis_useragent: str = Field(
-        default="LPRD-WebUntis-Plugin",
-        description="User-agent string sent to WebUntis",
+        description="WebUntis school name (subdomain identifier)",
         frozen=True,
     )
 
@@ -102,8 +86,20 @@ class _Settings(BaseSettings):
         frozen=True,
     )
 
+    template_dir: str = Field(
+        default="templates",
+        description="Path to template directory (absolute or relative to cwd)",
+        frozen=True,
+    )
+
     def untis_rooms_list(self) -> list[str]:
         return [r.strip() for r in self.untis_rooms.split(",") if r.strip()]
+
+    @computed_field
+    @cached_property
+    def template_dir_abs(self) -> Path:
+        p = Path(self.template_dir)
+        return p if p.is_absolute() else p.resolve()
 
     @computed_field
     @cached_property

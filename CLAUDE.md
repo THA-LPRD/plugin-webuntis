@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LPRD plugin template. Base project for building LPRD plugins with a built-in event-driven state machine (Boost.MSM-inspired).
+LPRD WebUntis plugin. Fetches timetable data from WebUntis via anonymous auth and pushes it to the LPRD registry per configured room with slot-based TTL scheduling.
 
 ## Technology Stack
 
@@ -15,7 +15,8 @@ LPRD plugin template. Base project for building LPRD plugins with a built-in eve
 - **Database**: SQLAlchemy async with SQLite
 - **Configuration**: Pydantic Settings with .env file support
 - **Logging**: Loguru
-- **Scheduler**: APScheduler
+- **Scheduler**: APScheduler (per-room jobs)
+- **WebUntis**: Custom async HTTP client with anonymous JSONRPC auth (`app/untis/client.py`)
 - **Containerization**: Docker & Docker Compose
 
 ## Development Commands
@@ -23,6 +24,8 @@ LPRD plugin template. Base project for building LPRD plugins with a built-in eve
 - `poe run` - Start plugin server on port 8001 [Note: Don't use this unless otherwise told to]
 - `poe format` - Format code with black and isort
 - `poe lint` - Lint code with black --check, isort --check, ty check, and ruff check
+- `uv run python fetch.py rooms` - List all WebUntis rooms
+- `uv run python fetch.py fetch <ROOM> [-d YYYY-MM-DD] [-o file.json]` - Fetch timetable for a room
 
 **Do not run:** `poe run` (assume already running)
 
@@ -51,17 +54,42 @@ Boost.MSM-inspired event-driven state machine. Core concepts:
 ```
 core (Region: BOOT | RUNNING | EXIT)
 ├── BOOT (submachine)
-│   ├── boot (Region: LOAD_CONFIG → REGISTER → STORE_CREDENTIALS → VERIFY_AUTH → READY)
-│   └── boot_error (Region: OK | REGISTRATION_FAILED | STORAGE_FAILED | AUTH_FAILED)
+│   ├── boot (Region: LOAD_CONFIG → REGISTER → STORE_CREDENTIALS → VERIFY_AUTH → CREATE_TEMPLATE → READY)
+│   └── boot_error (Region: OK | REGISTRATION_FAILED | STORAGE_FAILED | AUTH_FAILED | TEMPLATE_FAILED)
 └── RUNNING (submachine)
     ├── running (Region: IDLE → FETCHING → PUSHING → IDLE)
     └── running_error (Region: OK | FETCH_FAILED | PUSH_FAILED)
 ```
 
-- **PluginMachine** (`plugin_machine.py`): Thin async facade. Owns the event queue and scheduler. No domain logic.
+- **PluginMachine** (`plugin_machine.py`): Thin async facade. Owns the event queue and per-room schedulers. No domain logic.
 - **Core** (`core/machine.py`): Top-level region. Wires submachines, handles `SubregionError` for both boot (with retry) and operate (with recovery to IDLE).
-- **Boot** (`core/boot/`): Registration + auth flow. Retry count flows through events as `retries_remaining`.
-- **Operate** (`core/operate/`): Tick → Fetch → Push cycle.
+- **Boot** (`core/boot/`): Registration + auth + template creation flow. Retry count flows through events as `retries_remaining`.
+- **Operate** (`core/operate/`): Per-room Tick → Fetch → Push cycle. Ticks are deferred during FETCHING/PUSHING so room ticks queue up.
+
+### WebUntis Integration (`app/untis/`)
+
+- **client.py**: Async HTTP client using anonymous JSONRPC auth (no credentials needed, fixed OTP `100170`)
+- **models.py**: Pydantic models for WebUntis API responses (`UntisPeriod`, `UntisElement`, etc.)
+- **timetable.py**: Transforms `UntisPeriod` lists into room payloads — merges continuous lessons, inserts free-period breaks, computes current slot and TTL
+
+### Per-Room Scheduling
+
+Each configured room gets its own APScheduler job (`sync_<room>`). After each push:
+1. Compute seconds until the current slot ends for that room
+2. Reschedule that room's job to fire at the slot boundary
+3. On wake: re-fetch from WebUntis, determine new current slot, push with new TTL
+
+### Template Registration (`templates/`)
+
+During boot, the plugin scans `TEMPLATE_DIR` (default: `templates/`) for subdirectories. Each subdirectory is a template:
+
+```
+templates/
+  <template-name>/
+    metadata.json      ← name, description, version, variants, preferred_variant_index
+    template.html      ← Jinja/Nunjucks HTML template
+    sample_data.json   ← (optional) sample data for preview
+```
 
 ### Key Design Principles
 
@@ -91,3 +119,4 @@ core (Region: BOOT | RUNNING | EXIT)
 
 - The project uses `uv` for dependency management instead of pip/poetry
 - Never touch internal region state (e.g. `region._current`) — always go through the event-driven API
+- WebUntis uses anonymous auth — no API credentials needed

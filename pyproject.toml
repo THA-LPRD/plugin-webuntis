@@ -14,7 +14,6 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "python-dotenv>=1.2.1",
     "sqlalchemy[asyncio]>=2.0.47",
-    "webuntis>=0.1.24",
 ]
 
 [dependency-groups]

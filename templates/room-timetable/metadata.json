@@ -1,0 +1,9 @@
+{
+  "name": "WebUntis Room Timetable",
+  "description": "Room timetable with current lesson, time axis, and daily schedule",
+  "version": "1.0.0",
+  "variants": [
+    { "type": "content", "w": 10, "h": 6 }
+  ],
+  "preferred_variant_index": 0
+}

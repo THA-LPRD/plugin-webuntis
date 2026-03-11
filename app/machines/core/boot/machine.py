@@ -1,3 +1,4 @@
+import json
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
@@ -12,10 +13,12 @@ from app.db.models import Credentials
 from app.machines.core.boot.events import (
     AuthFailed,
     BootStart,
+    CreateTemplate,
     CredentialsObtained,
     NeedRegistration,
     RegistrationFailed,
     StorageFailed,
+    TemplateFailed,
     VerifyToken,
 )
 from app.machines.core.events import ErrorCleared
@@ -87,8 +90,8 @@ async def store_credentials(
     return VerifyToken(token=event.token, retries_remaining=event.retries_remaining)
 
 
-@boot.on(VerifyToken, source="VERIFY_AUTH", target="READY")
-async def verify_auth(event: VerifyToken) -> None:
+@boot.on(VerifyToken, source="VERIFY_AUTH", target="CREATE_TEMPLATE")
+async def verify_auth(event: VerifyToken) -> CreateTemplate:
     verify_url = f"{Settings.registry_url}/api/v2/plugin/verify"
 
     async with httpx.AsyncClient() as client:
@@ -100,11 +103,68 @@ async def verify_auth(event: VerifyToken) -> None:
         response.raise_for_status()
 
     _logger.info("Token verified successfully")
+    return CreateTemplate(token=event.token, retries_remaining=event.retries_remaining)
+
+
+@boot.on(CreateTemplate, source="CREATE_TEMPLATE", target="READY")
+async def create_template(event: CreateTemplate) -> None:
+    tpl_dir = Settings.template_dir_abs
+
+    if not tpl_dir.exists():
+        _logger.warning(f"Template directory {tpl_dir} not found, skipping")
+        return
+
+    url = f"{Settings.registry_url}/api/v2/plugin/webhook/createTemplate"
+    count = 0
+
+    async with httpx.AsyncClient() as client:
+        for entry in sorted(tpl_dir.iterdir()):
+            if not entry.is_dir():
+                continue
+
+            html_path = entry / "template.html"
+            if not html_path.exists():
+                continue
+
+            meta_path = entry / "metadata.json"
+            if not meta_path.exists():
+                _logger.warning(f"No metadata.json in {entry.name}, skipping")
+                continue
+
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            template_html = html_path.read_text(encoding="utf-8")
+
+            sample_data = None
+            sample_path = entry / "sample_data.json"
+            if sample_path.exists():
+                sample_data = json.loads(sample_path.read_text(encoding="utf-8"))
+
+            response = await client.post(
+                url,
+                json={
+                    "name": meta["name"],
+                    "description": meta.get("description"),
+                    "template_html": template_html,
+                    "sample_data": sample_data,
+                    "variants": meta["variants"],
+                    "preferred_variant_index": meta["preferred_variant_index"],
+                    "version": meta.get("version"),
+                },
+                headers={"Authorization": f"Bearer {event.token}"},
+                timeout=10.0,
+            )
+            response.raise_for_status()
+            count += 1
+            _logger.info(f"Template '{meta['name']}' created/updated")
+
+    _logger.info(f"Pushed {count} template(s)")
 
 
 boot_error.route(RegistrationFailed, source="OK", target="REGISTRATION_FAILED")
 boot_error.route(StorageFailed, source="OK", target="STORAGE_FAILED")
 boot_error.route(AuthFailed, source="OK", target="AUTH_FAILED")
+boot_error.route(TemplateFailed, source="OK", target="TEMPLATE_FAILED")
 boot_error.route(ErrorCleared, source="REGISTRATION_FAILED", target="OK")
 boot_error.route(ErrorCleared, source="STORAGE_FAILED", target="OK")
 boot_error.route(ErrorCleared, source="AUTH_FAILED", target="OK")
+boot_error.route(ErrorCleared, source="TEMPLATE_FAILED", target="OK")
