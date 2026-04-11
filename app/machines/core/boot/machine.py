@@ -1,71 +1,55 @@
 import json
-from collections.abc import AsyncGenerator
 from typing import Annotated
 
 import httpx
 from loguru import logger
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import Settings
-from app.db import get_session
-from app.db.models import Credentials
+from app.auth import request_with_bearer
 from app.machines.core.boot.events import (
     AuthFailed,
+    BootstrapFailed,
+    BootstrapMetadata,
     BootStart,
     CreateTemplate,
-    CredentialsObtained,
-    NeedRegistration,
-    RegistrationFailed,
-    StorageFailed,
+    FetchInstalledSites,
     TemplateFailed,
     VerifyToken,
 )
 from app.machines.core.events import ErrorCleared
+from app.runtime_config import RuntimeConfig
+from app.runtime_services import get_site_manager
+from app.site_manager import SiteManager
 from app.statemachine import Depends, Region
 
 _logger = logger.bind(classname="Boot")
-
-
-async def _get_db_session() -> AsyncGenerator[AsyncSession]:
-    async for session in get_session(Settings.database_url):
-        yield session
-
-
-DbSession = Annotated[AsyncSession, Depends(_get_db_session)]
+SiteManagerDep = Annotated[SiteManager, Depends(get_site_manager)]
 
 boot = Region("boot", initial="LOAD_CONFIG")
 boot_error = Region("boot_error", initial="OK")
 
 
-@boot.on(BootStart, source="LOAD_CONFIG")
-async def load_config(
-    event: BootStart, session: DbSession
-) -> tuple[str, VerifyToken] | tuple[str, NeedRegistration]:
-    result = await session.execute(
-        select(Credentials).order_by(Credentials.created_at.desc()).limit(1)
-    )
-    creds = result.scalar_one_or_none()
-    if creds:
-        _logger.info(f"Found existing credentials (plugin_id={creds.plugin_id})")
-        return "VERIFY_AUTH", VerifyToken(
-            token=creds.token, retries_remaining=event.retries_remaining
-        )
-    return "REGISTER", NeedRegistration(retries_remaining=event.retries_remaining)
+@boot.on(BootStart, source="LOAD_CONFIG", target="BOOTSTRAP")
+async def load_config(event: BootStart) -> BootstrapMetadata:
+    get_site_manager().clear_cache()
+    return BootstrapMetadata(retries_remaining=event.retries_remaining)
 
 
-@boot.on(NeedRegistration, source="REGISTER", target="STORE_CREDENTIALS")
-async def register(event: NeedRegistration) -> CredentialsObtained:
-    register_url = f"{Settings.registry_url}/api/v2/plugin/register"
-    _logger.info(f"Registering with registry at {register_url}")
+@boot.on(BootstrapMetadata, source="BOOTSTRAP", target="VERIFY_AUTH")
+async def bootstrap_metadata(event: BootstrapMetadata) -> VerifyToken:
+    bootstrap_url = f"{Settings.core_url}/api/v2/plugin/bootstrap"
+    _logger.info(f"Bootstrapping plugin metadata at {bootstrap_url}")
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            register_url,
+        response = await request_with_bearer(
+            client,
+            "POST",
+            bootstrap_url,
             json={
-                "registration_key": Settings.registration_key,
-                "base_url": Settings.plugin_base_url,
+                "baseUrl": Settings.plugin_base_url,
                 "version": Settings.plugin_version,
+                "description": Settings.plugin_description,
+                "healthCheckIntervalMs": Settings.health_check_interval_ms,
                 "topics": [
                     {
                         "key": "timetable",
@@ -73,55 +57,42 @@ async def register(event: NeedRegistration) -> CredentialsObtained:
                         "description": "Room timetable data from WebUntis",
                     },
                 ],
+                "configSchema": RuntimeConfig.model_json_schema(),
             },
             timeout=10.0,
         )
         response.raise_for_status()
 
-    data = response.json()
-    _logger.info(f"Registered successfully (plugin_id={data['plugin_id']})")
-    return CredentialsObtained(
-        plugin_id=data["plugin_id"],
-        token=data["token"],
-        retries_remaining=event.retries_remaining,
-    )
-
-
-@boot.on(CredentialsObtained, source="STORE_CREDENTIALS", target="VERIFY_AUTH")
-async def store_credentials(
-    event: CredentialsObtained, session: DbSession
-) -> VerifyToken:
-    session.add(Credentials(plugin_id=event.plugin_id, token=event.token))
-    await session.commit()
-    _logger.info("Credentials stored")
-    return VerifyToken(token=event.token, retries_remaining=event.retries_remaining)
+    _logger.info("Plugin metadata bootstrapped")
+    return VerifyToken(retries_remaining=event.retries_remaining)
 
 
 @boot.on(VerifyToken, source="VERIFY_AUTH", target="CREATE_TEMPLATE")
 async def verify_auth(event: VerifyToken) -> CreateTemplate:
-    verify_url = f"{Settings.registry_url}/api/v2/plugin/verify"
+    verify_url = f"{Settings.core_url}/api/v2/plugin/verify"
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(
+        response = await request_with_bearer(
+            client,
+            "GET",
             verify_url,
-            headers={"Authorization": f"Bearer {event.token}"},
             timeout=10.0,
         )
         response.raise_for_status()
 
     _logger.info("Token verified successfully")
-    return CreateTemplate(token=event.token, retries_remaining=event.retries_remaining)
+    return CreateTemplate(retries_remaining=event.retries_remaining)
 
 
-@boot.on(CreateTemplate, source="CREATE_TEMPLATE", target="READY")
-async def create_template(event: CreateTemplate) -> None:
+@boot.on(CreateTemplate, source="CREATE_TEMPLATE", target="FETCH_SITES")
+async def create_template(event: CreateTemplate) -> FetchInstalledSites:
     tpl_dir = Settings.template_dir_abs
 
     if not tpl_dir.exists():
         _logger.warning(f"Template directory {tpl_dir} not found, skipping")
-        return
+        return FetchInstalledSites(retries_remaining=event.retries_remaining)
 
-    url = f"{Settings.registry_url}/api/v2/plugin/webhook/createTemplate"
+    url = f"{Settings.core_url}/api/v2/plugin/webhook/createTemplate"
     count = 0
 
     async with httpx.AsyncClient() as client:
@@ -146,7 +117,9 @@ async def create_template(event: CreateTemplate) -> None:
             if sample_path.exists():
                 sample_data = json.loads(sample_path.read_text(encoding="utf-8"))
 
-            response = await client.post(
+            response = await request_with_bearer(
+                client,
+                "POST",
                 url,
                 json={
                     "name": meta["name"],
@@ -157,7 +130,6 @@ async def create_template(event: CreateTemplate) -> None:
                     "preferred_variant_index": meta["preferred_variant_index"],
                     "version": meta.get("version"),
                 },
-                headers={"Authorization": f"Bearer {event.token}"},
                 timeout=10.0,
             )
             response.raise_for_status()
@@ -165,13 +137,23 @@ async def create_template(event: CreateTemplate) -> None:
             _logger.info(f"Template '{meta['name']}' created/updated")
 
     _logger.info(f"Pushed {count} template(s)")
+    return FetchInstalledSites(retries_remaining=event.retries_remaining)
 
 
-boot_error.route(RegistrationFailed, source="OK", target="REGISTRATION_FAILED")
-boot_error.route(StorageFailed, source="OK", target="STORAGE_FAILED")
+@boot.on(FetchInstalledSites, source="FETCH_SITES", target="READY")
+async def fetch_installed_sites(
+    event: FetchInstalledSites, site_manager: SiteManagerDep
+) -> None:
+    sites = await site_manager.get(sync=True, allow_stale=True)
+    if sites:
+        _logger.info(f"Loaded {len(sites)} installed site(s) at startup")
+    else:
+        _logger.warning("No installed sites available after startup refresh")
+
+
+boot_error.route(BootstrapFailed, source="OK", target="BOOTSTRAP_FAILED")
 boot_error.route(AuthFailed, source="OK", target="AUTH_FAILED")
 boot_error.route(TemplateFailed, source="OK", target="TEMPLATE_FAILED")
-boot_error.route(ErrorCleared, source="REGISTRATION_FAILED", target="OK")
-boot_error.route(ErrorCleared, source="STORAGE_FAILED", target="OK")
+boot_error.route(ErrorCleared, source="BOOTSTRAP_FAILED", target="OK")
 boot_error.route(ErrorCleared, source="AUTH_FAILED", target="OK")
 boot_error.route(ErrorCleared, source="TEMPLATE_FAILED", target="OK")

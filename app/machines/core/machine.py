@@ -7,9 +7,8 @@ from app import Settings
 from app.machines.core.boot import boot, boot_error
 from app.machines.core.boot.events import (
     AuthFailed,
+    BootstrapFailed,
     BootStart,
-    RegistrationFailed,
-    StorageFailed,
     TemplateFailed,
 )
 from app.machines.core.events import ErrorCleared, Shutdown
@@ -25,8 +24,7 @@ core.submachine("BOOT", regions=[boot, boot_error])
 core.submachine("RUNNING", regions=[running, running_error])
 
 _BOOT_ERROR_MAP: dict[str, type[Event]] = {
-    "REGISTER": RegistrationFailed,
-    "STORE_CREDENTIALS": StorageFailed,
+    "BOOTSTRAP": BootstrapFailed,
     "VERIFY_AUTH": AuthFailed,
     "CREATE_TEMPLATE": TemplateFailed,
 }

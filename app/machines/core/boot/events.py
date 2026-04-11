@@ -8,37 +8,27 @@ class BootStart(Event):
         self.retries_remaining = retries_remaining
 
 
-class NeedRegistration(Event):
+class BootstrapMetadata(Event):
     def __init__(self, retries_remaining: int = MAX_RETRIES) -> None:
         self.retries_remaining = retries_remaining
 
 
-class CredentialsObtained(Event):
-    def __init__(
-        self, plugin_id: str, token: str, retries_remaining: int = MAX_RETRIES
-    ) -> None:
-        self.plugin_id = plugin_id
-        self.token = token
-        self.retries_remaining = retries_remaining
-
-
 class VerifyToken(Event):
-    def __init__(self, token: str, retries_remaining: int = MAX_RETRIES) -> None:
-        self.token = token
+    def __init__(self, retries_remaining: int = MAX_RETRIES) -> None:
         self.retries_remaining = retries_remaining
 
 
-class RegistrationFailed(Event):
+class BootstrapFailed(Event):
     pass
 
 
-class StorageFailed(Event):
-    pass
+class FetchInstalledSites(Event):
+    def __init__(self, retries_remaining: int = MAX_RETRIES) -> None:
+        self.retries_remaining = retries_remaining
 
 
 class CreateTemplate(Event):
-    def __init__(self, token: str, retries_remaining: int = MAX_RETRIES) -> None:
-        self.token = token
+    def __init__(self, retries_remaining: int = MAX_RETRIES) -> None:
         self.retries_remaining = retries_remaining
 
 

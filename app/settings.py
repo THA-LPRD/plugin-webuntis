@@ -1,17 +1,26 @@
 import tomllib
 from enum import Enum
-from functools import cached_property
+from functools import cache, cached_property
 from pathlib import Path
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def _get_version() -> str:
+@cache
+def _get_project() -> dict:
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     with open(pyproject_path, "rb") as f:
         pyproject = tomllib.load(f)
-    return pyproject["project"]["version"]
+    return pyproject["project"]
+
+
+def _get_version() -> str:
+    return _get_project()["version"]
+
+
+def _get_description() -> str:
+    return _get_project()["description"]
 
 
 class LogLevel(str, Enum):
@@ -38,8 +47,25 @@ class _Settings(BaseSettings):
         frozen=True,
     )
 
-    registration_key: str = Field(
-        description="Key used to register this plugin with the LPRD registry",
+    core_url: str = Field(
+        default="http://localhost:3000",
+        description="LPRD core base URL (no trailing slash, no /api/v2)",
+        frozen=True,
+    )
+
+    workos_authkit_domain: str = Field(
+        description="WorkOS AuthKit domain used to mint M2M access tokens",
+        frozen=True,
+    )
+
+    client_id: str = Field(
+        description="WorkOS M2M client id for this plugin application",
+        min_length=1,
+        frozen=True,
+    )
+
+    client_secret: str = Field(
+        description="WorkOS M2M client secret for this plugin application",
         min_length=1,
         frozen=True,
     )
@@ -50,15 +76,16 @@ class _Settings(BaseSettings):
         frozen=True,
     )
 
-    registry_url: str = Field(
-        default="http://localhost:8000",
-        description="LPRD registry base URL (no trailing slash, no /api/v2)",
+    plugin_base_url: str = Field(
+        default="http://localhost:8001",
+        description="This plugin's public base URL",
         frozen=True,
     )
 
-    plugin_base_url: str = Field(
-        default="http://localhost:8001",
-        description="This plugin's public URL for registration",
+    health_check_interval_ms: int = Field(
+        default=30_000,
+        description="Plugin health check interval reported during bootstrap",
+        ge=30_000,
         frozen=True,
     )
 
@@ -126,3 +153,8 @@ class _Settings(BaseSettings):
     @cached_property
     def plugin_version(self) -> str:
         return _get_version()
+
+    @computed_field
+    @cached_property
+    def plugin_description(self) -> str:
+        return _get_description()

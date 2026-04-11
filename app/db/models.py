@@ -8,12 +8,13 @@ class Base(DeclarativeBase):
     pass
 
 
-class Credentials(Base):
-    __tablename__ = "credentials"
+class InstalledSiteRecord(Base):
+    __tablename__ = "installed_sites"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    plugin_id: Mapped[str] = mapped_column(String, nullable=False)
-    token: Mapped[str] = mapped_column(String, nullable=False)
+    site_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    slug: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

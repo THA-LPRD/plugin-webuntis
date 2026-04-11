@@ -12,15 +12,17 @@ from app.machines.core.boot.events import BootStart
 from app.machines.core.events import Shutdown, Tick
 from app.machines.core.operate.machine import pop_next_wake
 from app.scheduler import create_room_schedulers, reschedule_room_in
+from app.site_manager import SiteManager
 from app.statemachine import Event
 
 
 class PluginMachine:
-    def __init__(self) -> None:
+    def __init__(self, *, site_manager: SiteManager) -> None:
         self._logger = logger.bind(classname="PluginMachine")
         self._queue: asyncio.Queue[Event] = asyncio.Queue()
         self._task: asyncio.Task[None] | None = None
         self._scheduler: Any = None
+        self.site_manager = site_manager
 
     async def start(self) -> None:
         self._task = asyncio.create_task(self._run())
@@ -49,7 +51,6 @@ class PluginMachine:
 
     async def _run(self) -> None:
         await init_db(Settings.database_url)
-
         await core.start()
         await core.process_event(BootStart(retries_remaining=Settings.boot_max_retries))
 

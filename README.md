@@ -1,6 +1,6 @@
 # WebUntis Plugin
 
-LPRD plugin that fetches timetable data from WebUntis and pushes it to the LPRD registry with slot-based TTL scheduling.
+LPRD plugin that fetches timetable data from WebUntis and pushes it to the LPRD app with slot-based TTL scheduling.
 
 ## Architecture
 
@@ -11,8 +11,8 @@ Based on the [plugin-template](../plugin-template), using a Boost.MSM-inspired s
 ```
 core (BOOT | RUNNING | EXIT)
 ├── BOOT
-│   ├── boot: LOAD_CONFIG → REGISTER → STORE_CREDENTIALS → VERIFY_AUTH → CREATE_TEMPLATE → READY
-│   └── boot_error: OK | REGISTRATION_FAILED | STORAGE_FAILED | AUTH_FAILED | TEMPLATE_FAILED
+│   ├── boot: LOAD_CONFIG → BOOTSTRAP → VERIFY_AUTH → CREATE_TEMPLATE → FETCH_SITES → READY
+│   └── boot_error: OK | BOOTSTRAP_FAILED | AUTH_FAILED | TEMPLATE_FAILED
 └── RUNNING
     ├── running: IDLE → FETCHING → PUSHING → IDLE (per-room, deferred ticks)
     └── running_error: OK | FETCH_FAILED | PUSH_FAILED
@@ -67,11 +67,14 @@ Set environment variables in `.env`:
 
 ```env
 LOG_LEVEL=INFO
-REGISTRY_URL=http://localhost:8000
-PLUGIN_BASE_URL=http://localhost:8001
-REGISTRATION_KEY=your-registration-key
-SYNC_INTERVAL_MINUTES=60
+CORE_URL=http://localhost:3000
+WORKOS_AUTHKIT_DOMAIN=https://your-authkit-domain.authkit.app
+CLIENT_ID=client_...
+CLIENT_SECRET=secret_...
 DATABASE_URL=sqlite+aiosqlite:///data/plugin.db
+PLUGIN_BASE_URL=http://localhost:8001
+SYNC_INTERVAL_MINUTES=60
+HEALTH_CHECK_INTERVAL_MS=30000
 TEMPLATE_DIR=templates
 
 # WebUntis
