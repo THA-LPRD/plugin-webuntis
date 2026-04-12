@@ -46,9 +46,7 @@ def _get_type_hints_safe(func: Callable[..., Any]) -> dict[str, Any]:
         return {}
 
 
-def _extract_depends(
-    name: str, param: inspect.Parameter, hints: dict[str, Any]
-) -> Depends | None:
+def _extract_depends(name: str, param: inspect.Parameter, hints: dict[str, Any]) -> Depends | None:
     if isinstance(param.default, Depends):
         return param.default
 

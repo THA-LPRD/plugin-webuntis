@@ -18,7 +18,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=26.1.0",
+    "black>=26.3.1",
     "isort>=8.0.0",
     "poethepoet>=0.42.1",
     "ruff>=0.15.4",
@@ -27,6 +27,17 @@ dev = [
 
 [tool.isort]
 profile = "black"
+line_length = 120
+py_version = 314
+no_inline_sort = true
+
+[tool.black]
+line-length = 120
+target-version = ["py314"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
 
 [tool.poe]
 executor.type = "uv"
@@ -50,14 +61,14 @@ type = "boolean"
 
 [tool.poe.tasks.format]
 shell = """
-echo "Formatting code with black and isort..."
-black app && isort app
+echo "Formatting code with isort and black..."
+isort app fetch.py && black app fetch.py
 """
-help = "Format code with black and isort"
+help = "Format code with isort and black"
 
 [tool.poe.tasks.lint]
 shell = """
-echo "Linting code with black, isort, ty, and ruff..."
-black --check app && isort --check app && ty check app && ruff check app
+echo "Linting code with isort, black, ty, and ruff..."
+isort --check app fetch.py && black --check app fetch.py && ty check app && ruff check app fetch.py
 """
 help = "Run all linters"

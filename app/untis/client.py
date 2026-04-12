@@ -63,20 +63,14 @@ class UntisClient:
             json={
                 "id": identity,
                 "method": "getUserData2017",
-                "params": [
-                    {"auth": {"clientTime": ts, "user": "#anonymous#", "otp": 100170}}
-                ],
+                "params": [{"auth": {"clientTime": ts, "user": "#anonymous#", "otp": 100170}}],
                 "jsonrpc": "2.0",
             },
         )
 
-        self._session_id = step2.cookies.get("JSESSIONID") or step1.cookies.get(
-            "JSESSIONID"
-        )
+        self._session_id = step2.cookies.get("JSESSIONID") or step1.cookies.get("JSESSIONID")
         if not self._session_id:
-            raise RuntimeError(
-                "Anonymous login failed: no JSESSIONID cookie in response"
-            )
+            raise RuntimeError("Anonymous login failed: no JSESSIONID cookie in response")
 
         _logger.debug("Anonymous session established")
 
@@ -89,9 +83,7 @@ class UntisClient:
     async def get_rooms(self) -> list[dict[str, Any]]:
         return await self._jsonrpc("getRooms", {})
 
-    async def get_timetable_for_week(
-        self, element_id: int, ref_date: date
-    ) -> list[UntisPeriod]:
+    async def get_timetable_for_week(self, element_id: int, ref_date: date) -> list[UntisPeriod]:
         assert self._http is not None
 
         resp = await self._http.get(
@@ -109,16 +101,10 @@ class UntisClient:
         try:
             result_data = resp.json()["data"]["result"]["data"]
         except (KeyError, TypeError) as exc:
-            raise RuntimeError(
-                f"Unexpected timetable response structure: {exc}"
-            ) from exc
+            raise RuntimeError(f"Unexpected timetable response structure: {exc}") from exc
 
-        elements_by_id: dict[int, dict[str, Any]] = {
-            e["id"]: e for e in result_data.get("elements", [])
-        }
-        raw_periods: list[dict[str, Any]] = result_data.get("elementPeriods", {}).get(
-            str(element_id), []
-        )
+        elements_by_id: dict[int, dict[str, Any]] = {e["id"]: e for e in result_data.get("elements", [])}
+        raw_periods: list[dict[str, Any]] = result_data.get("elementPeriods", {}).get(str(element_id), [])
 
         return [_parse_period(p, elements_by_id) for p in raw_periods]
 
@@ -148,14 +134,10 @@ class UntisClient:
 
     def _cookie_headers(self) -> dict[str, str]:
         encoded_school = base64.b64encode(self._school.encode()).decode()
-        return {
-            "Cookie": f"JSESSIONID={self._session_id}; schoolname=_{encoded_school}"
-        }
+        return {"Cookie": f"JSESSIONID={self._session_id}; schoolname=_{encoded_school}"}
 
 
-def _parse_period(
-    period: dict[str, Any], elements_by_id: dict[int, dict[str, Any]]
-) -> UntisPeriod:
+def _parse_period(period: dict[str, Any], elements_by_id: dict[int, dict[str, Any]]) -> UntisPeriod:
     refs = period.get("elements", [])
 
     def collect(type_id: int) -> list[dict[str, Any]]:

@@ -69,11 +69,7 @@ def _merge_continuous(lessons: list[dict[str, Any]]) -> list[dict[str, Any]]:
     current = dict(lessons[0])
 
     for nxt in lessons[1:]:
-        if (
-            current["endTime"] == nxt["startTime"]
-            and current["date"] == nxt["date"]
-            and current["name"] == nxt["name"]
-        ):
+        if current["endTime"] == nxt["startTime"] and current["date"] == nxt["date"] and current["name"] == nxt["name"]:
             all_teachers = current["teachers"] + nxt["teachers"]
             seen: set[str] = set()
             unique = []
@@ -121,9 +117,7 @@ def _insert_breaks(lessons: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(result, key=lambda e: (e["date"], e["startTime"]))
 
 
-def build_room_payload(
-    periods: list[UntisPeriod], room_name: str, now: datetime | None = None
-) -> dict[str, Any]:
+def build_room_payload(periods: list[UntisPeriod], room_name: str, now: datetime | None = None) -> dict[str, Any]:
     if now is None:
         now = datetime.now()
 
@@ -174,9 +168,7 @@ def build_room_payload(
     }
 
 
-def _find_current_slot(
-    days: dict[str, list[dict[str, Any]]], current_day: str, now_time_int: int
-) -> str:
+def _find_current_slot(days: dict[str, list[dict[str, Any]]], current_day: str, now_time_int: int) -> str:
     slots = days.get(current_day, [])
     now_str = _format_time(now_time_int)
 
@@ -224,26 +216,22 @@ def _find_nearest_boundary(payload: dict[str, Any], now: datetime) -> int | None
 
 
 def compute_slot_ttl(payload: dict[str, Any], now: datetime | None = None) -> int:
-    if now is None:
-        now = datetime.now()
+    current_time = datetime.now() if now is None else now
 
-    secs = _find_nearest_boundary(payload, now)
+    secs = _find_nearest_boundary(payload, current_time)
     if secs is not None and secs > 0:
         return secs
 
     return 3600
 
 
-def compute_next_wake_seconds(
-    payloads: list[dict[str, Any]], now: datetime | None = None
-) -> int:
-    if now is None:
-        now = datetime.now()
+def compute_next_wake_seconds(payloads: list[dict[str, Any]], now: datetime | None = None) -> int:
+    current_time = datetime.now() if now is None else now
 
     earliest: int | None = None
 
     for payload in payloads:
-        secs = _find_nearest_boundary(payload, now)
+        secs = _find_nearest_boundary(payload, current_time)
         if secs is not None and secs > 0:
             earliest = min(earliest, secs) if earliest is not None else secs
 

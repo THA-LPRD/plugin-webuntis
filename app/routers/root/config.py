@@ -11,9 +11,7 @@ _logger = logger.bind(classname="ConfigRouter")
 
 
 class ConfigUpdate(BaseModel):
-    sync_interval_minutes: int = Field(
-        ..., gt=0, description="Sync interval in minutes"
-    )
+    sync_interval_minutes: int = Field(..., gt=0, description="Sync interval in minutes")
 
 
 @router.get("/config/schema")
@@ -38,8 +36,6 @@ async def update_config(body: ConfigUpdate, request: Request) -> dict[str, str]:
             Settings.untis_rooms_list(),
             body.sync_interval_minutes,
         )
-        _logger.info(
-            f"Rescheduled all rooms to every {body.sync_interval_minutes} minutes"
-        )
+        _logger.info(f"Rescheduled all rooms to every {body.sync_interval_minutes} minutes")
 
     return {"status": "ok"}

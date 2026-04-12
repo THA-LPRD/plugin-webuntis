@@ -141,9 +141,7 @@ async def create_template(event: CreateTemplate) -> FetchInstalledSites:
 
 
 @boot.on(FetchInstalledSites, source="FETCH_SITES", target="READY")
-async def fetch_installed_sites(
-    event: FetchInstalledSites, site_manager: SiteManagerDep
-) -> None:
+async def fetch_installed_sites(event: FetchInstalledSites, site_manager: SiteManagerDep) -> None:
     sites = await site_manager.get(sync=True, allow_stale=True)
     if sites:
         _logger.info(f"Loaded {len(sites)} installed site(s) at startup")

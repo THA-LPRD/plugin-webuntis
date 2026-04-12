@@ -52,7 +52,12 @@ async def fetch(event: FetchRequest) -> PushPayload:
 
     async with UntisClient(Settings.untis_school, Settings.untis_server) as client:
         all_rooms = await client.get_rooms()
-        room_map = {r["name"]: r["id"] for r in all_rooms if r.get("name")}
+        room_map: dict[str, int] = {}
+        for room in all_rooms:
+            name = room.get("name")
+            room_id = room.get("id")
+            if isinstance(name, str) and isinstance(room_id, int):
+                room_map[name] = room_id
 
         room_id = room_map.get(room_name)
         if room_id is None:
@@ -65,9 +70,7 @@ async def fetch(event: FetchRequest) -> PushPayload:
     wake = compute_next_wake_seconds([payload])
     _next_wake[room_name] = wake
 
-    _logger.info(
-        f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s"
-    )
+    _logger.info(f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s")
 
     return PushPayload(room_name=room_name, data=payload, ttl_seconds=ttl)
 
@@ -98,9 +101,7 @@ async def push(event: PushPayload, site_manager: SiteManagerDep) -> None:
             )
             response.raise_for_status()
 
-    _logger.info(
-        f"Pushed '{event.room_name}' to {len(sites)} site(s) ttl={event.ttl_seconds}s"
-    )
+    _logger.info(f"Pushed '{event.room_name}' to {len(sites)} site(s) ttl={event.ttl_seconds}s")
 
 
 running_error.route(FetchFailed, source="OK", target="FETCH_FAILED")

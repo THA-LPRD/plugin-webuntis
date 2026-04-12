@@ -6,8 +6,8 @@ from loguru import logger
 from app import Settings
 from app.machines import PluginMachine
 from app.routers.root import router
-from app.runtime_services import clear_site_manager, set_site_manager
 from app.runtime_config import RuntimeConfig
+from app.runtime_services import clear_site_manager, set_site_manager
 from app.site_manager import SiteManager
 
 _logger = logger.bind(classname="Main")

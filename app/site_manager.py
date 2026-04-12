@@ -31,9 +31,7 @@ class SiteManager:
         self._database_url = database_url
         self._cache: tuple[InstalledSite, ...] | None = None
 
-    async def get(
-        self, *, sync: bool = False, allow_stale: bool = True
-    ) -> tuple[InstalledSite, ...]:
+    async def get(self, *, sync: bool = False, allow_stale: bool = True) -> tuple[InstalledSite, ...]:
         if sync:
             try:
                 return await self._sync_from_core()
@@ -46,9 +44,7 @@ class SiteManager:
                         f"Failed to sync installed sites from core, using {len(cached)} cached site(s): {exc}"
                     )
                 else:
-                    self._logger.warning(
-                        f"Failed to sync installed sites from core and no cached sites exist: {exc}"
-                    )
+                    self._logger.warning(f"Failed to sync installed sites from core and no cached sites exist: {exc}")
                 return cached
 
         return await self._load_cached()
@@ -61,15 +57,11 @@ class SiteManager:
             return self._cache
 
         async for session in get_session(self._database_url):
-            result = await session.execute(
-                select(InstalledSiteRecord).order_by(InstalledSiteRecord.slug.asc())
-            )
+            result = await session.execute(select(InstalledSiteRecord).order_by(InstalledSiteRecord.slug.asc()))
             records = result.scalars().all()
-            self._cache = tuple(
-                InstalledSite(id=record.site_id, slug=record.slug, name=record.name)
-                for record in records
-            )
-            return self._cache
+            cached = tuple(InstalledSite(id=record.site_id, slug=record.slug, name=record.name) for record in records)
+            self._cache = cached
+            return cached
 
         raise RuntimeError("No database session available")
 
@@ -78,10 +70,7 @@ class SiteManager:
 
         async for session in get_session(self._database_url):
             await session.execute(delete(InstalledSiteRecord))
-            session.add_all(
-                InstalledSiteRecord(site_id=site.id, slug=site.slug, name=site.name)
-                for site in normalized
-            )
+            session.add_all(InstalledSiteRecord(site_id=site.id, slug=site.slug, name=site.name) for site in normalized)
             await session.commit()
             self._cache = normalized
             return normalized
@@ -119,9 +108,7 @@ class SiteManager:
                 if next_cursor is None:
                     break
                 if not isinstance(next_cursor, str) or not next_cursor:
-                    raise RuntimeError(
-                        "Invalid plugin sites response: next_cursor must be null or string"
-                    )
+                    raise RuntimeError("Invalid plugin sites response: next_cursor must be null or string")
                 cursor = next_cursor
 
         sites = await self._store(items)

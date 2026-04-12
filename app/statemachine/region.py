@@ -82,16 +82,12 @@ class Region:
     ) -> None:
         self._ensure_state(source)
         self._ensure_state(target)
-        self._rows.append(
-            Row(source=source, event=event_type, target=target, guard=guard)
-        )
+        self._rows.append(Row(source=source, event=event_type, target=target, guard=guard))
 
     def defer(self, event_type: type[Event], *, in_state: str) -> None:
         self._ensure_state(in_state)
         old = self._states[in_state]
-        self._states[in_state] = State(
-            name=old.name, defer=old.defer | frozenset({event_type})
-        )
+        self._states[in_state] = State(name=old.name, defer=old.defer | frozenset({event_type}))
 
     # --- Submachine wiring ---
 
@@ -110,9 +106,7 @@ class Region:
                 try:
                     await sub.start()
                 except MachineError as exc:
-                    error = SubregionError(
-                        exc.state_name, exc.region, exc.cause, trigger=exc.trigger
-                    )
+                    error = SubregionError(exc.state_name, exc.region, exc.cause, trigger=exc.trigger)
                     if await self._process_own_rows(error):
                         return
                     raise
@@ -147,9 +141,7 @@ class Region:
                 if await sub.process_event(event):
                     handled = True
             except MachineError as exc:
-                error = SubregionError(
-                    exc.state_name, exc.region, exc.cause, trigger=exc.trigger
-                )
+                error = SubregionError(exc.state_name, exc.region, exc.cause, trigger=exc.trigger)
                 if await self._process_own_rows(error):
                     return True
                 raise
@@ -169,7 +161,8 @@ class Region:
         for row in self._rows:
             if row.source != self._current:
                 continue
-            if not isinstance(event, row.event):
+            row_event: Any = row.event
+            if not isinstance(event, row_event):
                 continue
             if row.guard and not await row.guard(event):
                 continue
@@ -181,9 +174,7 @@ class Region:
                 try:
                     result = await resolve_and_call(row.action, event)
                 except Exception as exc:
-                    raise MachineError(
-                        self._current, self.name, exc, trigger=event
-                    ) from exc
+                    raise MachineError(self._current, self.name, exc, trigger=event) from exc
 
                 target, forwarded = self._parse_action_result(result, target)
 
@@ -206,9 +197,7 @@ class Region:
         return False
 
     @staticmethod
-    def _parse_action_result(
-        result: Any, row_target: str | None
-    ) -> tuple[str | None, Event | None]:
+    def _parse_action_result(result: Any, row_target: str | None) -> tuple[str | None, Event | None]:
         if result is None:
             return row_target, None
 
@@ -235,9 +224,7 @@ class Region:
                 try:
                     await sub.start()
                 except MachineError as exc:
-                    error = SubregionError(
-                        exc.state_name, exc.region, exc.cause, trigger=exc.trigger
-                    )
+                    error = SubregionError(exc.state_name, exc.region, exc.cause, trigger=exc.trigger)
                     if await self._process_own_rows(error):
                         return
                     raise

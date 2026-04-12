@@ -58,8 +58,8 @@ uv run python fetch.py fetch M1.02 -o output.json    # Save to file
 ## Development
 
 - `poe run` — Start plugin server on port 8001
-- `poe format` — Format code with black and isort
-- `poe lint` — Lint code with black, isort, ty, and ruff
+- `poe format` — Format code with isort and Black
+- `poe lint` — Check isort, Black, ty, and Ruff
 
 ## Configuration
 

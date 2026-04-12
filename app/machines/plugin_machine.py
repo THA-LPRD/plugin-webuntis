@@ -61,9 +61,7 @@ class PluginMachine:
                 self.push_room_tick,
             )
             self._scheduler.start()
-            self._logger.info(
-                f"Scheduler started for {len(Settings.untis_rooms_list())} room(s)"
-            )
+            self._logger.info(f"Scheduler started for {len(Settings.untis_rooms_list())} room(s)")
             await self._event_loop()
 
     async def _event_loop(self) -> None:
