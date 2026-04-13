@@ -1,6 +1,12 @@
 <div>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         .root {
             width: var(--width-px);
@@ -17,7 +23,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #ED135A;
+            background-color: #ed135a;
         }
         .header-item {
             color: #ffffff;
@@ -28,13 +34,23 @@
             font-size: 60px;
         }
         #logo {
-            padding-top: 7.3%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            overflow: hidden;
         }
-        .logo-svg {
-            width: 100%;
+
+        #logo svg,
+        #logo img {
+            width: 240px;
             height: auto;
+            flex-shrink: 0;
         }
-        .st0 { fill: #FFFFFF; }
+
+        .st0 {
+            fill: #ffffff;
+        }
 
         .body-wrapper {
             width: 100%;
@@ -51,7 +67,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            background-color: #FFFFFF;
+            background-color: #ffffff;
         }
         .body-item {
             color: #000000;
@@ -72,7 +88,7 @@
         }
         .class-label {
             font-size: 18px;
-            color: #ED135A;
+            color: #ed135a;
         }
 
         /* Time axis */
@@ -85,14 +101,14 @@
             display: flex;
             flex-direction: column;
             font-size: 14px;
-            background-color: #FFFFFF;
+            background-color: #ffffff;
         }
         .body-side-slot {
             flex: 1;
             font-family: monospace;
             font-weight: bold;
             text-align: left;
-            background-color: #FFFFFF;
+            background-color: #ffffff;
             display: flex;
             align-items: flex-start;
             padding-top: 1px;
@@ -104,7 +120,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            background-color: #FFFFFF;
+            background-color: #ffffff;
         }
         .slot-event {
             padding-left: 4px;
@@ -112,17 +128,17 @@
             text-align: left;
             font-size: 14px;
             font-weight: bold;
-            color: #FFFFFF;
+            color: #ffffff;
             background-color: #000000;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
         }
         .slot-event.current {
-            border-left: 4px solid #ED135A;
+            border-left: 4px solid #ed135a;
         }
         .slot-free {
-            background-color: #FFFFFF;
+            background-color: #ffffff;
         }
 
         /* Fetched-at in left panel */
@@ -140,15 +156,22 @@
     <div class="root">
         <div class="header-container">
             <div class="header-item" id="logo">
-                <svg class="logo-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-                    viewBox="0 0 534.7 273" xml:space="preserve">
-                    <g>
-                        <path class="st0"
-                            d="M384.2,150.8h29.7v51.3L384.2,150.8z M299.3,122.1V61.2l35.1,60.9H299.3z M169,204.1h30.7v-53.3h54v-28.7h-54
-                            V58.5H169V204.1z M79,204.1h30.7V87.2h44.1V58.5H34.9v28.7H79V204.1z M411,204.1h33.5v-8c0-37.7-22.8-73.9-66.7-73.9h-10.3
-                            l-23.2-40.2c-9.2-15.9-22-23.4-42.7-23.4h-33v145.6h30.7v-53.3H351l17.2,29.9C377.5,196.6,390.3,204.1,411,204.1" />
-                    </g>
-                </svg>
+                {% if logoUrl %}
+                    <img class="logo-svg" src="{{ logoUrl }}" alt="Logo"/>
+                {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 309.0387">
+                        <g id="Boundingbox">
+                            <rect width="500" height="309.0387" fill="none" stroke-width="0"/>
+                        </g>
+                        <g id="Logo">
+                            <path
+                                    d="m355.3802,169.1536h21.6639v37.4459l-21.6639-37.4459Zm-63.1278-21.5209v-44.6198l25.8249,44.6198h-25.8249Zm-94.6917,61.406h22.9558v-39.8851h40.4588v-21.5209h-40.4588v-47.6327h-22.9558v109.0387Zm-64.5619,0h22.9551v-87.5178h32.9988v-21.5209h-88.9527v21.5209h32.9988v87.5178Zm242.4674,0h24.5338v-6.0258c0-28.2642-17.0731-55.3802-49.9281-55.3802h-7.0301l-17.6475-30.4158c-6.7433-11.6217-16.3556-17.2169-31.8507-17.2169h-24.247v109.0387h22.9558v-39.8851h38.3071l13.0559,22.6682c6.7433,11.6217,16.3556,17.2169,31.8507,17.2169"
+                                    fill="#fff"
+                                    stroke-width="0"
+                            />
+                        </g>
+                    </svg>
+                {% endif %}
             </div>
             <div class="header-item">{{ room }}</div>
             <div class="header-item">KW {{ calendarWeek }}</div>
@@ -156,56 +179,42 @@
         <div class="body-wrapper">
             <div class="body-container">
                 <div class="body-item">
-                    {% set found = false %}
-                    {% for slot in today %}
-                        {% if slot.id == currentLessonId and not found %}
-                            {% set found = true %}
-                            <div class="title">{{ slot.name }}</div>
-                            <div class="timeslot">{{ slot.startTime }} - {{ slot.endTime }} Uhr</div>
-                            {% if slot.teachers | length > 0 %}
-                            <div class="teacher-list">{{ slot.teachers | join(", ") }}</div>
-                            {% endif %}
-                            {% if slot.class %}
-                            <div class="class-label">{{ slot.class }}</div>
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if not found %}
+                    {% set found = false %} {% for slot in today %} {% if slot.id == currentLessonId and not found %}
+                    {% set found = true %}
+                    <div class="title">{{ slot.name }}</div>
+                    <div class="timeslot">{{ slot.startTime }} - {{ slot.endTime }} Uhr</div>
+                    {% if slot.teachers | length > 0 %}
+                        <div class="teacher-list">{{ slot.teachers | join(", ") }}</div>
+                    {% endif %} {% if slot.class %}
+                        <div class="class-label">{{ slot.class }}</div>
+                    {% endif %} {% endif %} {% endfor %} {% if not found %}
                     <div class="title">Frei</div>
-                    {% endif %}
+                {% endif %}
                 </div>
                 {% if fetchedAt %}
-                <div class="fetched-at">Stand: {{ fetchedAt }}</div>
+                    <div class="fetched-at">Stand: {{ fetchedAt }}</div>
                 {% endif %}
             </div>
 
             <div class="body-side-container">
                 {% for h in range(8, 21) %}
-                <div class="body-side-slot">{% if h < 10 %}0{% endif %}{{ h }}</div>
+                    <div class="body-side-slot">{% if h < 10 %}0{% endif %}{{ h }}</div>
                 {% endfor %}
             </div>
 
             <div class="body-side-container-two">
-                {% for slot in today %}
-                    {% set sMin = slot.startTime.slice(0,2) | int * 60 + slot.startTime.slice(3,5) | int %}
-                    {% set eMin = slot.endTime.slice(0,2) | int * 60 + slot.endTime.slice(3,5) | int %}
-                    {# Clamp to 08:00–20:00 (480–1200 min) #}
-                    {% set cStart = sMin if sMin > 480 else 480 %}
-                    {% set cEnd = eMin if eMin < 1200 else 1200 %}
-                    {% set dur = cEnd - cStart %}
-                    {% if dur > 0 %}
-                        {% if slot.name %}
-                        <div class="slot-event {% if slot.id == currentLessonId %}current{% endif %}" style="flex: {{ dur }};">
-                            {{ slot.name }}
-                        </div>
-                        {% else %}
-                        <div class="slot-free" style="flex: {{ dur }};"></div>
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
+                {% for slot in today %} {% set sMin = slot.startTime.slice(0,2) | int * 60 + slot.startTime.slice(3,5) |
+                int %} {% set eMin = slot.endTime.slice(0,2) | int * 60 + slot.endTime.slice(3,5) | int %} {# Clamp to
+                08:00–20:00 (480–1200 min) #} {% set cStart = sMin if sMin > 480 else 480 %} {% set cEnd = eMin if eMin
+                < 1200 else 1200 %} {% set dur = cEnd - cStart %} {% if dur > 0 %} {% if slot.name %}
+                    <div class="slot-event {% if slot.id == currentLessonId %}current{% endif %}"
+                         style="flex: {{ dur }};">
+                        {{ slot.name }}
+                    </div>
+                {% else %}
+                    <div class="slot-free" style="flex: {{ dur }};"></div>
+                {% endif %} {% endif %} {% endfor %}
             </div>
-
         </div>
     </div>
-
 </div>

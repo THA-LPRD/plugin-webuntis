@@ -1,5 +1,5 @@
 {
-	"name": "LPRD Plugin Template Dev Container",
+	"name": "LPRD Plugin Webuntis Dev Container",
 	"dockerFile": "Dockerfile",
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {

@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: tha-lprd/plugin-template
+  IMAGE_NAME: tha-lprd/plugin-webuntis
 
 jobs:
   build-and-push:
