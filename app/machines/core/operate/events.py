@@ -9,10 +9,11 @@ class FetchRequest(Event):
 
 
 class PushPayload(Event):
-    def __init__(self, room_name: str, data: dict[str, Any], ttl_seconds: int) -> None:
+    def __init__(self, room_name: str, data: dict[str, Any], ttl_seconds: int, next_wake_seconds: int) -> None:
         self.room_name = room_name
         self.data = data
         self.ttl_seconds = ttl_seconds
+        self.next_wake_seconds = next_wake_seconds
 
 
 class FetchFailed(Event):

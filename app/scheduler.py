@@ -2,7 +2,6 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from loguru import logger
 
@@ -33,7 +32,10 @@ def create_room_schedulers(
 
 def reschedule_room_in(scheduler: AsyncIOScheduler, room: str, seconds: int) -> None:
     run_at = datetime.now(UTC) + timedelta(seconds=seconds)
-    scheduler.reschedule_job(_job_id(room), trigger=DateTrigger(run_date=run_at))
+    scheduler.reschedule_job(
+        _job_id(room),
+        trigger=IntervalTrigger(seconds=seconds, start_date=run_at, timezone=UTC),
+    )
     _logger.debug(f"'{room}' next sync in {seconds}s ({run_at.strftime('%H:%M:%S')})")
 
 

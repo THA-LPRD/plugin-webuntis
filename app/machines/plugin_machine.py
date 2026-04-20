@@ -76,4 +76,7 @@ class PluginMachine:
 
             if isinstance(event, Tick) and self._scheduler:
                 next_secs = pop_next_wake(event.room_name)
-                reschedule_room_in(self._scheduler, event.room_name, next_secs)
+                try:
+                    reschedule_room_in(self._scheduler, event.room_name, next_secs)
+                except Exception:
+                    self._logger.exception(f"Failed to reschedule room '{event.room_name}'")

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 import httpx
@@ -72,7 +72,7 @@ async def fetch(event: FetchRequest) -> PushPayload:
 
     _logger.info(f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s")
 
-    return PushPayload(room_name=room_name, data=payload, ttl_seconds=ttl)
+    return PushPayload(room_name=room_name, data=payload, ttl_seconds=ttl, next_wake_seconds=wake)
 
 
 @running.on(PushPayload, source="PUSHING", target="IDLE")
@@ -101,7 +101,13 @@ async def push(event: PushPayload, site_manager: SiteManagerDep) -> None:
             )
             response.raise_for_status()
 
-    _logger.info(f"Pushed '{event.room_name}' to {len(sites)} site(s) ttl={event.ttl_seconds}s")
+    next_run_at = datetime.now(UTC) + timedelta(seconds=event.next_wake_seconds)
+    _logger.info(
+        f"Pushed '{event.room_name}' to {len(sites)} site(s) "
+        f"ttl={event.ttl_seconds}s "
+        f"next_fetch_in={event.next_wake_seconds}s "
+        f"next_fetch_at={next_run_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    )
 
 
 running_error.route(FetchFailed, source="OK", target="FETCH_FAILED")
