@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import timedelta
 from typing import Annotated
 
 import httpx
@@ -16,6 +16,7 @@ from app.machines.core.operate.events import (
 from app.runtime_services import get_site_manager
 from app.site_manager import SiteManager
 from app.statemachine import Depends, Region
+from app.time import now
 from app.untis import (
     UntisClient,
     build_room_payload,
@@ -49,6 +50,7 @@ async def on_tick(event: Tick) -> FetchRequest:
 @running.on(FetchRequest, source="FETCHING", target="PUSHING")
 async def fetch(event: FetchRequest) -> PushPayload:
     room_name = event.room_name
+    current_time = now()
 
     async with UntisClient(Settings.untis_school, Settings.untis_server) as client:
         all_rooms = await client.get_rooms()
@@ -63,11 +65,11 @@ async def fetch(event: FetchRequest) -> PushPayload:
         if room_id is None:
             raise RuntimeError(f"Room '{room_name}' not found in WebUntis")
 
-        periods = await client.get_timetable_for_week(room_id, date.today())
+        periods = await client.get_timetable_for_week(room_id, current_time.date())
 
-    payload = build_room_payload(periods, room_name)
-    ttl = compute_slot_ttl(payload)
-    wake = compute_next_wake_seconds([payload])
+    payload = build_room_payload(periods, room_name, now=current_time)
+    ttl = compute_slot_ttl(payload, now=current_time)
+    wake = compute_next_wake_seconds([payload], now=current_time)
     _next_wake[room_name] = wake
 
     _logger.info(f"Fetched '{room_name}' slot={payload.get('currentLessonId')} ttl={ttl}s next_wake={wake}s")
@@ -101,7 +103,7 @@ async def push(event: PushPayload, site_manager: SiteManagerDep) -> None:
             )
             response.raise_for_status()
 
-    next_run_at = datetime.now(UTC) + timedelta(seconds=event.next_wake_seconds)
+    next_run_at = now() + timedelta(seconds=event.next_wake_seconds)
     _logger.info(
         f"Pushed '{event.room_name}' to {len(sites)} site(s) "
         f"ttl={event.ttl_seconds}s "

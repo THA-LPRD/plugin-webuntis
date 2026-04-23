@@ -17,5 +17,6 @@ services:
       CLIENT_SECRET: ${CLIENT_SECRET:?client secret required}
       DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:///data/plugin.db}
       PLUGIN_BASE_URL: ${PLUGIN_BASE_URL:-http://localhost:8001}
+      TIMEZONE: ${TIMEZONE:-Europe/Berlin}
       HEALTH_CHECK_INTERVAL_MS: ${HEALTH_CHECK_INTERVAL_MS:-30000}
       SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-60}

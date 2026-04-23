@@ -1,9 +1,20 @@
+import os
 import sys
+import time
 
 from loguru import logger
 from pydantic import ValidationError
 
 from app.settings import _Settings
+
+
+def _apply_process_timezone(name: str) -> None:
+    if not hasattr(time, "tzset"):
+        return
+
+    os.environ["TZ"] = name
+    time.tzset()
+
 
 try:
     Settings = _Settings()  # type: ignore[call-arg]
@@ -32,6 +43,7 @@ except ValidationError as e:
     print("Please check your .env file or environment variables and try again.")
     sys.exit(1)
 
+_apply_process_timezone(Settings.timezone)
 
 logger.remove()
 logger.add(

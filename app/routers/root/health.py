@@ -1,9 +1,10 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from app import Settings
+from app.time import now
 
 router = APIRouter()
 
@@ -31,5 +32,5 @@ async def health(request: Request) -> HealthResponse:
         running_state=snap.running_state,
         boot_error=snap.boot_error,
         running_error=snap.running_error,
-        timestamp=datetime.now(UTC),
+        timestamp=now(),
     )

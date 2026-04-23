@@ -73,6 +73,7 @@ CLIENT_ID=client_...
 CLIENT_SECRET=secret_...
 DATABASE_URL=sqlite+aiosqlite:///data/plugin.db
 PLUGIN_BASE_URL=http://localhost:8001
+TIMEZONE=Europe/Berlin
 SYNC_INTERVAL_MINUTES=60
 HEALTH_CHECK_INTERVAL_MS=30000
 TEMPLATE_DIR=templates

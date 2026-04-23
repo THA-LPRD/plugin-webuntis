@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from typing import Any
 
+from app.time import now as current_time
 from app.untis.models import UntisPeriod
 
 _DAY_NAMES = [
@@ -119,7 +120,7 @@ def _insert_breaks(lessons: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def build_room_payload(periods: list[UntisPeriod], room_name: str, now: datetime | None = None) -> dict[str, Any]:
     if now is None:
-        now = datetime.now()
+        now = current_time()
 
     today_weekday = now.weekday()
     current_day = _DAY_NAMES[today_weekday]
@@ -216,9 +217,9 @@ def _find_nearest_boundary(payload: dict[str, Any], now: datetime) -> int | None
 
 
 def compute_slot_ttl(payload: dict[str, Any], now: datetime | None = None) -> int:
-    current_time = datetime.now() if now is None else now
+    current_time_value = current_time() if now is None else now
 
-    secs = _find_nearest_boundary(payload, current_time)
+    secs = _find_nearest_boundary(payload, current_time_value)
     if secs is not None and secs > 0:
         return secs
 
@@ -226,12 +227,12 @@ def compute_slot_ttl(payload: dict[str, Any], now: datetime | None = None) -> in
 
 
 def compute_next_wake_seconds(payloads: list[dict[str, Any]], now: datetime | None = None) -> int:
-    current_time = datetime.now() if now is None else now
+    current_time_value = current_time() if now is None else now
 
     earliest: int | None = None
 
     for payload in payloads:
-        secs = _find_nearest_boundary(payload, current_time)
+        secs = _find_nearest_boundary(payload, current_time_value)
         if secs is not None and secs > 0:
             earliest = min(earliest, secs) if earliest is not None else secs
 

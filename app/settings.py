@@ -2,8 +2,9 @@ import tomllib
 from enum import Enum
 from functools import cache, cached_property
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -82,6 +83,12 @@ class _Settings(BaseSettings):
         frozen=True,
     )
 
+    timezone: str = Field(
+        default="Europe/Berlin",
+        description="IANA timezone used for logs, payload timestamps, and scheduler calculations",
+        frozen=True,
+    )
+
     health_check_interval_ms: int = Field(
         default=30_000,
         description="Plugin health check interval reported during bootstrap",
@@ -143,11 +150,25 @@ class _Settings(BaseSettings):
     def untis_rooms_list(self) -> list[str]:
         return [r.strip() for r in self.untis_rooms.split(",") if r.strip()]
 
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError("Timezone must be a valid IANA name such as 'Europe/Berlin' or 'America/Chicago'") from exc
+        return value
+
     @computed_field
     @cached_property
     def template_dir_abs(self) -> Path:
         p = Path(self.template_dir)
         return p if p.is_absolute() else p.resolve()
+
+    @computed_field
+    @cached_property
+    def timezone_info(self) -> ZoneInfo:
+        return ZoneInfo(self.timezone)
 
     @computed_field
     @cached_property
