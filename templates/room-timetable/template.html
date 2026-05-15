@@ -47,7 +47,9 @@
             height: auto;
             flex-shrink: 0;
         }
-
+        #CW {
+          min-width: 275px
+        }
         .st0 {
             fill: #ffffff;
         }
@@ -131,8 +133,10 @@
             color: #ffffff;
             background-color: #000000;
             overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            white-space: normal;
+            text-overflow: clip;
+            line-height: 1.5;
+            word-break: break-word;
         }
         .slot-event.current {
             border-left: 4px solid #ed135a;
@@ -174,7 +178,7 @@
                 {% endif %}
             </div>
             <div class="header-item">{{ room }}</div>
-            <div class="header-item">KW {{ calendarWeek }}</div>
+            <div class="header-item" id="CW">KW {{ calendarWeek }}</div>
         </div>
         <div class="body-wrapper">
             <div class="body-container">
