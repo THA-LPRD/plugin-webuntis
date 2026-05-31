@@ -81,6 +81,8 @@
         .title {
             padding-top: 5%;
             font-size: 50px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .timeslot {
             font-size: 35px;
@@ -185,7 +187,7 @@
                 <div class="body-item">
                     {% set found = false %} {% for slot in today %} {% if slot.id == currentLessonId and not found %}
                     {% set found = true %}
-                    <div class="title">{{ slot.name }}</div>
+                    <div class="title">{{ slot.name if slot.name else "Frei" }}</div>
                     <div class="timeslot">{{ slot.startTime }} - {{ slot.endTime }} Uhr</div>
                     {% if slot.teachers | length > 0 %}
                         <div class="teacher-list">{{ slot.teachers | join(", ") }}</div>
