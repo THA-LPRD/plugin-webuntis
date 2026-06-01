@@ -81,8 +81,13 @@
         .title {
             padding-top: 5%;
             font-size: 50px;
-            overflow-wrap: anywhere;
-            word-break: break-word;
+            display: -webkit-box;
+            hyphens: auto;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            word-break: normal;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
         }
         .timeslot {
             font-size: 35px;
@@ -122,11 +127,15 @@
         .body-side-container-two {
             width: 31%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
             background-color: #ffffff;
+            min-height: 0;
+            overflow: hidden;
+            position: relative;
         }
         .slot-event {
+            position: absolute;
+            left: 0;
+            right: 0;
             padding-left: 4px;
             padding-top: 2px;
             text-align: left;
@@ -134,17 +143,23 @@
             font-weight: bold;
             color: #ffffff;
             background-color: #000000;
+            display: -webkit-box;
             overflow: hidden;
             white-space: normal;
-            text-overflow: clip;
+            text-overflow: ellipsis;
             line-height: 1.5;
-            word-break: break-word;
+            overflow-wrap: normal;
+            word-break: normal;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            min-height: 0;
         }
         .slot-event.current {
             border-left: 4px solid #ed135a;
         }
         .slot-free {
             background-color: #ffffff;
+            min-height: 0;
         }
 
         /* Fetched-at in left panel */
@@ -159,7 +174,7 @@
 
     {% set today = days[day] if days and days[day] else [] %}
 
-    <div class="root">
+    <div class="root" lang="de">
         <div class="header-container">
             <div class="header-item" id="logo">
                 {% if logoUrl %}
@@ -214,11 +229,11 @@
                 08:00–20:00 (480–1200 min) #} {% set cStart = sMin if sMin > 480 else 480 %} {% set cEnd = eMin if eMin
                 < 1200 else 1200 %} {% set dur = cEnd - cStart %} {% if dur > 0 %} {% if slot.name %}
                     <div class="slot-event {% if slot.id == currentLessonId %}current{% endif %}"
-                         style="flex: {{ dur }};">
+                         style="top: {{ (cStart - 480) / 720 * 100 }}%; height: {{ dur / 720 * 100 }}%;">
                         {{ slot.name }}
                     </div>
                 {% else %}
-                    <div class="slot-free" style="flex: {{ dur }};"></div>
+                    <div class="slot-free" style="display: none;"></div>
                 {% endif %} {% endif %} {% endfor %}
             </div>
         </div>
